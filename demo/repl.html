@@ -41,7 +41,7 @@ html, body {
 .output-wrapper {
   position: absolute;
   right: 0;
-  top: 0;
+  top: 35px;
 }
 
 html.hide-output .output-wrapper {
@@ -122,9 +122,15 @@ pre,
   transition: color 1s ease-in-out
 }
 
+.examples-wrap {
+    padding: 0.5em 1em;
+    font: 13px/20px 'Droid Sans', sans-serif;
+}
+
 </style>
 </head>
 <body>
+<div class="examples-wrap"><label>Examples</label><select class="examples" name="examples"></select></div>
 <textarea class="input"></textarea>
 <pre class="error"></pre>
 <pre class="eval"></pre>
@@ -262,8 +268,21 @@ pre,
     errorElement.hidden = true;
     function onSuccess(transcoded, sourceMap) {
       if (evalCheckbox.checked) {
+        evalElement.textContent = '';
+        ['log', 'debug', 'warn', 'error'].forEach(function (method) {
+           window.console[method] = function () {
+             evalElement.textContent = evalElement.textContent + Array.prototype.join.call(arguments, ' ') + '\n';
+           };
+        });
         try {
-          evalElement.textContent = ('global', eval)(transcoded);
+          //evalElement.textContent = evalElement.textContent + ('global', eval)(transcoded);
+          evalElement.textContent = 'Console:' + '\n';
+          var result = ('global', eval)(transcoded);
+          evalElement.textContent = evalElement.textContent + '\nReturn value:\n';
+          if (Object.prototype.toString.call(result) === '[object Object]') {
+              result = JSON.stringify(result, null, ' ');
+          }
+          evalElement.textContent = evalElement.textContent + result;
         } catch(ex) {
           hasError = true;
           errorElement.textContent = ex;
@@ -402,6 +421,62 @@ pre,
       }
     }
   }
+
+  var examples = {
+    'Blank': '',
+    'Classes and Inheritance': [
+        'class One { ',
+        '  getName () { ',
+        '    console.log(\'One\');',
+        '  }',
+        '}',
+        'class Two extends One {',
+        '  getName () {',
+        '    console.log(\'Two extends \' + super.getName());',
+        '  }',
+        '}',
+        '',
+        '// will print \'One\'',
+        'var one = new One();',
+        '',
+        '// will print \'One\' and \'Two extends One\'',
+        'var two = new Two();',
+        'one.getName();',
+        'two.getName();'
+    ].join('\n'),
+    'Destructuring Assignment': [
+        'var x = 3;',
+        'var y = 4;',
+        '[x, y] = [y, x]',
+        'console.log(\'x = \' + x);',
+        'console.log(\'y = \' + y)'
+    ].join('\n'),
+    'Rest Arguments': [
+        'var multiplyArray = function (multiplier, ...numbers) {',
+        '  // numbers is an array',
+        '  console.log(Object.prototype.toString.call(numbers));',
+        '',
+        '  // also making use of array functions',
+        '  console.log(numbers.map(n => n * multiplier));',
+        '};',
+        '',
+        'multiplyArray(100, 2, 3, 4, 5, 6, 7, 8, 9);',
+        '',
+        '// also works the other way around using the spread operator',
+        'multiplyArray(5, ...[1,2,3,4,5,6,7,8,9]);'
+    ].join('\n')
+  };
+
+  Object.keys(examples).forEach(function (name) {
+      var option = document.createElement('option');
+      option.textContent = name;
+      option.value = name;
+      document.querySelector('.examples').appendChild(option);
+  });
+
+  document.querySelector('.examples').addEventListener('change', function (e) {
+      input.setValue(examples[this.value]);
+  });
 
 })();
 
