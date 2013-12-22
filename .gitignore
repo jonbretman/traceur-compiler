@@ -4,6 +4,7 @@
 *.swp
 .DS_Store
 .svn
+.idea
 bin/traceur-runtime.js
 bin/traceur.map
 bin/traceur.min.js
